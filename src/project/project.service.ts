@@ -26,7 +26,6 @@ export class ProjectService {
   }
 
   async findAllProject() {
-    console.log('inside findall project');
     return this.prisma.project.findMany();
   }
 

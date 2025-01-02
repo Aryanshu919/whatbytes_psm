@@ -61,6 +61,7 @@ export class TaskController {
   }
 
   @Get('/tasks')
+  @UseGuards(AuthGuard)
   async getFilteredTasks(
     @Query('status') status?: string,
     @Query('assignedUserId') assignedUserId?: string,

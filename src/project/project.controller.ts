@@ -45,7 +45,6 @@ export class ProjectController {
 
   @UseGuards(AuthGuard)
   @Put('/:id')
-  // @UseGuards(ProjectMiddleware)
   async updateProject(
     @Req() req,
     @Param('id') id: string,
