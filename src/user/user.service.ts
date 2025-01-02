@@ -41,6 +41,11 @@ export class UserService {
   }
 
   async register(email: string, pass: string, name: string) {
+    if (!name || !email || !pass) {
+      return {
+        msg: 'Given data is Incorrect Require all Fields',
+      };
+    }
     const useremail = await this.prisma.user.findUnique({
       where: {
         email,
@@ -75,21 +80,27 @@ export class UserService {
     return users;
   }
 
-  async createUser(userData: {
-    name: string;
-    email: string;
-    password: string;
-  }): Promise<User> {
-    const { email, name, password } = userData;
+  // async createUser(userData: {
+  //   name: string;
+  //   email: string;
+  //   password: string;
+  // }): Promise<User> {
+  //   const { email, name, password } = userData;
 
-    return await this.prisma.user.create({
-      data: {
-        email: email,
-        name: name,
-        password: password,
-      },
-    });
-  }
+  //   if (!email && !name && !password) {
+  //     return {
+  //       message: 'Given data is invalid',
+  //     };
+  //   }
+
+  //   return await this.prisma.user.create({
+  //     data: {
+  //       email: email,
+  //       name: name,
+  //       password: password,
+  //     },
+  //   });
+  // }
 
   async updateUser(id: string, userData: CurrentUserDTO, userId: string) {
     console.log('userData', userData);
