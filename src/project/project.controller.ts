@@ -8,64 +8,59 @@ import {
   Param,
   Post,
   Put,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project-dto';
 import { ProjectService } from './project.service';
-import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { UpdateProjectDto } from './dto/update-project-dto';
-import { CurrentUser } from 'src/utility/decorators/current-user.decorator';
-import { User } from '@prisma/client';
-import { ProjectMiddleware } from './project.middleware';
-
+import { AuthGuard } from 'src/guard/auth.guard';
 @Controller('projects')
-@UseGuards(JwtAuthGuard)
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 
+  @UseGuards(AuthGuard)
   @Post('')
-  async createProject(
-    @CurrentUser() CurrentUser: User,
-    req: Request,
-    @Body() createProjectDto: CreateProjectDto,
-  ) {
-    if (CurrentUser) {
-      return this.projectService.createProject(
-        createProjectDto,
-        CurrentUser.id,
-      );
+  async createProject(@Req() req, @Body() createProjectDto: CreateProjectDto) {
+    const userId = req.CurrentUser.sub;
+    console.log('inside createProject routes logging userId', userId);
+    if (userId) {
+      return this.projectService.createProject(createProjectDto, userId);
     } else {
       throw new HttpException('Not authorized.', HttpStatus.UNAUTHORIZED);
     }
   }
 
+  @UseGuards(AuthGuard)
   @Get('')
-  @UseGuards(ProjectMiddleware)
-  findAllProject() {
-    if (CurrentUser) {
+  findAllProject(@Req() req) {
+    const userId = req.CurrentUser.sub;
+    console.log('inside createProject routes logging userId', userId);
+    if (userId) {
       return this.projectService.findAllProject();
     } else {
       throw new HttpException('Not authorized.', HttpStatus.UNAUTHORIZED);
     }
   }
 
+  @UseGuards(AuthGuard)
   @Put('/:id')
-  @UseGuards(ProjectMiddleware)
+  // @UseGuards(ProjectMiddleware)
   async updateProject(
-    @CurrentUser() CurrentUser: User,
+    @Req() req,
     @Param('id') id: string,
     @Body() updateProjectDto: UpdateProjectDto,
   ) {
-    return this.projectService.updateProject(id, updateProjectDto, CurrentUser);
+    const userId = req.CurrentUser.sub;
+    return this.projectService.updateProject(id, updateProjectDto, userId);
   }
 
+  @UseGuards(AuthGuard)
   @Delete('/:id')
-  @UseGuards(ProjectMiddleware)
-  async deleteProject(
-    @CurrentUser() CurrentUser: User,
-    @Param('id') id: string,
-  ) {
-    return this.projectService.deleteProject(id, CurrentUser);
+  // @UseGuards(ProjectMiddleware)
+  async deleteProject(@Req() req, @Param('id') id: string) {
+    const userId = req.CurrentUser.sub;
+    return this.projectService.deleteProject(id, userId);
   }
 
   //   @Post(':/projectId/tasks')

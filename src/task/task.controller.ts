@@ -9,52 +9,55 @@ import {
   Delete,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/create-task-dto';
-import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { UpdateTaskDto } from './dto/update-task-dto';
-import { TaskMiddleware } from './task.middleware';
-import { CurrentUser } from 'src/utility/decorators/current-user.decorator';
-import { User } from '@prisma/client';
+import { AuthGuard } from 'src/guard/auth.guard';
 
 @Controller('')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AuthGuard)
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
   @Post('projects/:projectId/tasks')
-  @UseGuards(TaskMiddleware)
+  @UseGuards(AuthGuard)
   async createTask(
-    @CurrentUser() CurrentUser: User,
+    @Req() req,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Body() createTaskDto: CreateTaskDto,
   ) {
-    return this.taskService.createTask(projectId, createTaskDto, CurrentUser);
+    const userId = req.CurrentUser.sub;
+    return this.taskService.createTask(projectId, createTaskDto, userId);
   }
 
   @Get('projects/:projectId/tasks')
-  @UseGuards(TaskMiddleware)
-  async getTasks(@Param('projectId', ParseUUIDPipe) projectId: string) {
-    return this.taskService.getTasksByProjectId(projectId);
+  @UseGuards(AuthGuard)
+  async getTasks(
+    @Req() req,
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+  ) {
+    const uersId = req.CurrentUser.sub;
+    return this.taskService.getTasksByProjectId(projectId, uersId);
   }
 
   @Put('/tasks/:id')
-  @UseGuards(TaskMiddleware)
+  @UseGuards(AuthGuard)
   async updateTask(
+    @Req() req,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateTaskDto: UpdateTaskDto,
   ) {
-    return this.taskService.updateTask(id, updateTaskDto);
+    const userId = req.CurrentUser.sub;
+    return this.taskService.updateTask(id, updateTaskDto, userId);
   }
 
   @Delete('/tasks/:id')
-  @UseGuards(TaskMiddleware)
-  async deleteTask(
-    @CurrentUser() CurrentUser: User,
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
-    return this.taskService.deleteTask(id, CurrentUser);
+  @UseGuards(AuthGuard)
+  async deleteTask(@Req() req, @Param('id', ParseUUIDPipe) id: string) {
+    const userId = req.CurrentUser.sub;
+    return this.taskService.deleteTask(id, userId);
   }
 
   @Get('/tasks')

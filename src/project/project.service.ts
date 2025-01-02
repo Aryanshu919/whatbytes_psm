@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { CreateProjectDto } from './dto/create-project-dto';
 import { UpdateProjectDto } from './dto/update-project-dto';
-import { User } from '@prisma/client';
 
 @Injectable()
 export class ProjectService {
@@ -34,7 +33,7 @@ export class ProjectService {
   async updateProject(
     id: string,
     updateProjectDto: UpdateProjectDto,
-    CurrentUser: User,
+    userId: string,
   ) {
     const project = await this.prisma.project.findUnique({
       where: { id },
@@ -42,7 +41,7 @@ export class ProjectService {
     if (!project) {
       throw new NotFoundException(`Project with ID ${id} not found`);
     }
-    if (project.userId === CurrentUser.id) {
+    if (project.userId === userId) {
       return this.prisma.project.update({
         where: { id },
         data: updateProjectDto,
@@ -53,7 +52,7 @@ export class ProjectService {
     };
   }
 
-  async deleteProject(id: string, CurrentUser: User) {
+  async deleteProject(id: string, userId: string) {
     console.log('inside deleteproject');
     const project = await this.prisma.project.findUnique({
       where: { id },
@@ -63,7 +62,7 @@ export class ProjectService {
       throw new NotFoundException(`Project with ID ${id} not found`);
     }
 
-    if (project.userId === CurrentUser.id) {
+    if (project.userId === userId) {
       return this.prisma.project.delete({
         where: { id },
       });
@@ -71,12 +70,5 @@ export class ProjectService {
     return {
       msg: "'You can only delete your own data'",
     };
-  }
-  async findById(email: string) {
-    return this.prisma.user.findUnique({
-      where: {
-        email,
-      },
-    });
   }
 }

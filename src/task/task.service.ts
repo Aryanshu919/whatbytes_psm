@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { CreateTaskDto } from './dto/create-task-dto';
 import { UpdateTaskDto } from './dto/update-task-dto';
-import { User } from '@prisma/client';
 
 @Injectable()
 export class TaskService {
@@ -11,7 +10,7 @@ export class TaskService {
   async createTask(
     projectId: string,
     createTaskDto: CreateTaskDto,
-    CurrentUser: User,
+    userId: string,
   ) {
     const { assignedUserId, ...data } = createTaskDto;
     const project = await this.prisma.project.findUnique({
@@ -20,7 +19,7 @@ export class TaskService {
     if (!project) {
       throw new NotFoundException(`Project with ID ${projectId} not found.`);
     }
-    if (project.userId === CurrentUser.id) {
+    if (project.userId === userId) {
       if (assignedUserId) {
         const user = await this.prisma.user.findUnique({
           where: { id: assignedUserId },
@@ -42,7 +41,7 @@ export class TaskService {
     }
   }
 
-  async getTasksByProjectId(projectId: string) {
+  async getTasksByProjectId(projectId: string, userId: string) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
     });
@@ -50,13 +49,14 @@ export class TaskService {
     if (!project) {
       throw new NotFoundException(`Project with ID ${projectId} not found.`);
     }
-
-    return this.prisma.task.findMany({
-      where: { projectId },
-    });
+    if (project.userId === userId) {
+      return this.prisma.task.findMany({
+        where: { projectId },
+      });
+    }
   }
 
-  async updateTask(id: string, updateTaskDto: UpdateTaskDto) {
+  async updateTask(id: string, updateTaskDto: UpdateTaskDto, userId: string) {
     const task = await this.prisma.task.findUnique({
       where: { id },
     });
@@ -65,25 +65,34 @@ export class TaskService {
       throw new NotFoundException(`Task with ID ${id} not found.`);
     }
 
-    if (updateTaskDto.assignedUserId) {
-      const user = await this.prisma.user.findUnique({
-        where: { id: updateTaskDto.assignedUserId },
-      });
-
-      if (!user) {
-        throw new NotFoundException(
-          `User with ID ${updateTaskDto.assignedUserId} not found.`,
-        );
-      }
-    }
-
-    return this.prisma.task.update({
-      where: { id },
-      data: updateTaskDto,
+    const project = await this.prisma.project.findUnique({
+      where: { id: task.projectId },
     });
+
+    if (project.userId === userId) {
+      if (updateTaskDto.assignedUserId) {
+        const user = await this.prisma.user.findUnique({
+          where: { id: updateTaskDto.assignedUserId },
+        });
+
+        if (!user) {
+          throw new NotFoundException(
+            `User with ID ${updateTaskDto.assignedUserId} not found.`,
+          );
+        }
+      }
+
+      return this.prisma.task.update({
+        where: { id },
+        data: updateTaskDto,
+      });
+    }
+    return {
+      msg: 'You can only delete your own data',
+    };
   }
 
-  async deleteTask(id: string, CurrentUser: User) {
+  async deleteTask(id: string, userId: string) {
     const task = await this.prisma.task.findUnique({
       where: { id },
     });
@@ -95,7 +104,7 @@ export class TaskService {
       where: { id: task.projectId },
     });
 
-    if (project.userId === CurrentUser.id) {
+    if (project.userId === userId) {
       return this.prisma.task.delete({
         where: { id },
       });
@@ -112,14 +121,6 @@ export class TaskService {
     }
     return this.prisma.task.findMany({
       where: filter,
-    });
-  }
-
-  async findById(email: string) {
-    return this.prisma.user.findUnique({
-      where: {
-        email,
-      },
     });
   }
 }

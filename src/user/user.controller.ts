@@ -8,52 +8,55 @@ import {
   Param,
   Post,
   Put,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { User } from '@prisma/client';
-import { UserMiddleware } from './user.middleware';
-import { CurrentUser } from 'src/utility/decorators/current-user.decorator';
+import { AuthGuard } from 'src/guard/auth.guard';
+import { CurrentUserDTO } from 'src/utility/dto/current-user-dto';
 
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @Post('login')
+  async login(@Body() req) {
+    return this.userService.login(req);
+  }
+
+  @Post('')
+  async register(@Body() req) {
+    return this.userService.register(req.email, req.password, req.name);
+  }
+
   @Get('')
-  @UseGuards(UserMiddleware)
-  findAllUser(@CurrentUser() CurrentUser: User) {
-    if (CurrentUser) {
+  @UseGuards(AuthGuard)
+  findAllUser(@Req() req) {
+    const userId = req.CurrentUser.sub;
+    console.log('logging current userId', userId);
+
+    if (userId) {
       return this.userService.findAllUser();
     } else {
       throw new HttpException('Not authorized.', HttpStatus.UNAUTHORIZED);
     }
   }
 
-  @Post('')
-  @UseGuards(UserMiddleware)
-  async createUser(
-    @Body() userData: { name: string; email: string; password: string },
-  ): Promise<User> {
-    return this.userService.createUser(userData);
-  }
-
   @Put('/:id')
-  @UseGuards(UserMiddleware)
+  @UseGuards(AuthGuard)
   async updateUser(
-    @CurrentUser() CurrentUser: User,
+    @Req() req,
     @Param('id') id: string,
-    @Body() userData: User,
-  ): Promise<User> {
-    console.log(CurrentUser);
-    return this.userService.updateUser(id, userData, CurrentUser);
+    @Body() userData: CurrentUserDTO,
+  ): Promise<object> {
+    const userId = req.CurrentUser.sub;
+    return this.userService.updateUser(id, userData, userId);
   }
 
   @Delete('/:id')
-  @UseGuards(UserMiddleware)
-  async deleteUser(
-    @CurrentUser() CurrentUser: User,
-    @Param('id') id: string,
-  ): Promise<User> {
-    return this.userService.deleteUser(id, CurrentUser);
+  @UseGuards(AuthGuard)
+  async deleteUser(@Req() req, @Param('id') id: string): Promise<object> {
+    const userId = req.CurrentUser.sub;
+    return this.userService.deleteUser(id, userId);
   }
 }
