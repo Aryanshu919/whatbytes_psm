@@ -26,13 +26,44 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Getting Started
+
+To get started with the Job Board app, follow these steps:
+
+1. Clone the repository:
+
+   ```sh
+   git clone https://github.com/Aryanshu919/whatbytes_psm
+   ```
 ## Project setup
 
 ```bash
 $ npm install
 ```
+Follow these steps to set up the repository locally and run it.
+
+### Configuration
+
+1. Create a `.env` file in the root folder of your project.
+
+   ```bash
+   #
+   # Database
+   #
+   DATABASE_URL="postgres://postgres:password@localhost:5432/postgres"
+   JWT_SECRET=
 
 ## Compile and run the project
+
+2.Run prisma command 
+  ```bash
+  npx prisma init
+
+  npx prisma migrate dev --name inti
+
+  npx prisma generate
+  
+
 
 ```bash
 # development
